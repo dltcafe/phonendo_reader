@@ -31,7 +31,7 @@ pub struct ServerManager {
 
 impl ServerManager {
     pub async fn new() -> Result<Self> {
-        let adapter = ServerManager::connect_adapter().await?;
+        let adapter = Self::connect_adapter().await?;
 
         Ok(Self {
             adapter,
@@ -66,12 +66,12 @@ impl ServerManager {
             .adapter
             .serve_gatt_application(gatt_application.application_definition)
             .await?;
-        let advertising_handler = advertise_gatt_service(
-            &self.adapter,
-            vec![gatt_application.service_uuid],
-            gatt_application.service_name.to_string(),
-        )
-        .await?;
+        let advertising_handler = self
+            .advertise_gatt_service(
+                vec![gatt_application.service_uuid],
+                gatt_application.service_name.to_string(),
+            )
+            .await?;
 
         self.application_configuration = Some(ApplicationConfiguration {
             advertising_handler,
@@ -83,6 +83,21 @@ impl ServerManager {
         Ok(())
     }
 
+    async fn advertise_gatt_service(
+        &self,
+        service_uuids: Vec<Uuid>,
+        local_name: String,
+    ) -> Result<AdvertisementHandle> {
+        let le_advertisement = Advertisement {
+            service_uuids: service_uuids.into_iter().collect(),
+            discoverable: Some(true),
+            local_name: Some(local_name),
+            ..Default::default()
+        };
+
+        Ok(self.adapter.advertise(le_advertisement).await?)
+    }
+
     pub async fn stop(&mut self) {
         if let Some(application_configuration) = self.application_configuration.take() {
             drop(application_configuration.application_handle);
@@ -90,19 +105,4 @@ impl ServerManager {
             sleep(Duration::from_secs(1)).await;
         }
     }
-}
-
-pub async fn advertise_gatt_service(
-    adapter: &Adapter,
-    service_uuids: Vec<Uuid>,
-    local_name: String,
-) -> Result<AdvertisementHandle> {
-    let le_advertisement = Advertisement {
-        service_uuids: service_uuids.into_iter().collect(),
-        discoverable: Some(true),
-        local_name: Some(local_name),
-        ..Default::default()
-    };
-
-    Ok(adapter.advertise(le_advertisement).await?)
 }
