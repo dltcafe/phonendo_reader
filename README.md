@@ -2,7 +2,7 @@
 
 ## What is this?
 
-A band emulator for phonendo development.
+A band emulator for [phonendo](https://github.com/dltcafe/phonendo) development.
 
 This emulator allows to generate a continuous stream of random events (specifically, heartbeats and steps) and transmit it via bluetooth.
 
