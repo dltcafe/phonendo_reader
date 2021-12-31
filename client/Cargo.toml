@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+blt = { path = "../blt" }
 anyhow = "1.0.52"
+tokio = { version = "1.15.0", features = ["rt-multi-thread", "macros", "io-util", "io-std"] }

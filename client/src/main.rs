@@ -1,7 +1,9 @@
 use anyhow::Result;
+use blt::{applications::ping_pong, ApplicationClient};
 
-fn main() -> Result<()> {
-    println!("Client is running!");
+#[tokio::main]
+async fn main() -> Result<()> {
+    ApplicationClient::start(ping_pong::application_descriptor()).await?;
 
     Ok(())
 }

@@ -26,6 +26,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bluer",
+ "futures",
  "tokio",
  "uuid",
 ]
@@ -81,6 +82,8 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "blt",
+ "tokio",
 ]
 
 [[package]]

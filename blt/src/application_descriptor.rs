@@ -23,6 +23,18 @@ impl ApplicationDescriptor {
             characteristics_uuids,
         }
     }
+
+    pub fn service_uuid(&self) -> &Uuid {
+        &self.service_uuid
+    }
+
+    pub fn service_name(&self) -> &str {
+        self.service_name
+    }
+
+    pub fn characteristics_uuids(&self) -> &Vec<Uuid> {
+        &self.characteristics_uuids
+    }
 }
 
 impl From<ApplicationDescriptor> for GattApplication {
