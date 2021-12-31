@@ -1,47 +1,47 @@
 use anyhow::Result;
 
-use crate::application_manager::{AdapterManager, ApplicationConfiguration};
+use crate::{AdapterManager, ApplicationConfiguration};
 use bluer::{
     gatt::local::{Application, CharacteristicControl},
     Uuid,
 };
 
 pub struct GattApplication {
-    application_definition: Application,
     service_uuid: Uuid,
-    characteristic_control: CharacteristicControl,
     service_name: &'static str,
+    application_definition: Application,
+    characteristics_controls: Vec<CharacteristicControl>,
 }
 
 impl GattApplication {
     pub fn new(
-        application_definition: Application,
         service_uuid: Uuid,
-        characteristic_control: CharacteristicControl,
         service_name: &'static str,
+        application_definition: Application,
+        characteristics_controls: Vec<CharacteristicControl>,
     ) -> Self {
         Self {
-            application_definition,
             service_uuid,
-            characteristic_control,
             service_name,
+            application_definition,
+            characteristics_controls,
         }
-    }
-
-    pub fn application_definition(&self) -> &Application {
-        &self.application_definition
     }
 
     pub fn service_uuid(&self) -> &Uuid {
         &self.service_uuid
     }
 
-    pub fn characteristic_control(&self) -> &CharacteristicControl {
-        &self.characteristic_control
-    }
-
     pub fn service_name(&self) -> &'static str {
         self.service_name
+    }
+
+    pub fn application_definition(&self) -> &Application {
+        &self.application_definition
+    }
+
+    pub fn characteristics_controls(&self) -> &Vec<CharacteristicControl> {
+        &self.characteristics_controls
     }
 
     pub async fn init(self, adapter_manager: &AdapterManager) -> Result<ApplicationConfiguration> {
@@ -53,10 +53,10 @@ impl GattApplication {
             .await?;
 
         Ok(ApplicationConfiguration::new(
-            advertisement_handle,
-            application_handle,
-            self.characteristic_control,
             self.service_name,
+            self.characteristics_controls,
+            application_handle,
+            advertisement_handle,
         ))
     }
 }

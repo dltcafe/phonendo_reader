@@ -496,7 +496,6 @@ dependencies = [
  "anyhow",
  "blt",
  "bluer",
- "futures",
  "tokio",
  "uuid",
 ]

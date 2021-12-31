@@ -1,7 +1,9 @@
 use anyhow::Result;
-use bluer::adv::{Advertisement, AdvertisementHandle};
-use bluer::gatt::local::{Application, ApplicationHandle};
-use bluer::Adapter;
+use bluer::{
+    adv::{Advertisement, AdvertisementHandle},
+    gatt::local::{Application, ApplicationHandle},
+    Adapter,
+};
 use uuid::Uuid;
 
 pub struct AdapterManager {
