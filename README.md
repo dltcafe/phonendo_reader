@@ -14,6 +14,10 @@ To build the workspace (or in other words, each of the crates in it), just run `
 
 ## Packages in the workspace
 
+### blt
+
+Library crate to manage Bluetooth operations.
+
 ### server
 
 Binary crate that serves a Bluetooth GATT server.
