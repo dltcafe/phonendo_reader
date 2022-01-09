@@ -33,6 +33,10 @@ impl ApplicationConfiguration {
         &self.characteristics_controls
     }
 
+    pub fn pop_characteristic_control(&mut self) -> Option<CharacteristicControl> {
+        self.characteristics_controls.pop()
+    }
+
     pub fn application_handle(&self) -> &ApplicationHandle {
         &self.application_handle
     }
