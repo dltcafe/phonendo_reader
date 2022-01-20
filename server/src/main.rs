@@ -1,8 +1,8 @@
 use anyhow::Result;
-use blt::{applications::ping_pong, ApplicationServer};
+use blt::{applications::ping_pong::PingPong, ApplicationServer};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    ApplicationServer::start(ping_pong::gatt_application()).await?;
+    ApplicationServer::start(Box::new(PingPong::default())).await?;
     Ok(())
 }

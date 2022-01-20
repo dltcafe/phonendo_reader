@@ -1,27 +1,24 @@
-use crate::{AdapterManager, ApplicationDescriptor};
+use crate::{AdapterManager, ApplicationDescriptor, BltApplication};
 use anyhow::Result;
-use bluer::gatt::{CharacteristicReader, CharacteristicWriter};
 use bluer::{
     gatt::remote::{Characteristic, Service},
     AdapterEvent, Device,
 };
 use futures::{pin_mut, StreamExt};
-use std::io::Error;
-use std::{collections::HashMap, time::Duration};
-use tokio::io::AsyncWriteExt;
-use tokio::{io::AsyncReadExt, time::timeout};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub struct ApplicationClient {
     adapter_manager: AdapterManager,
+    blt_application: Box<dyn BltApplication>,
     application_descriptor: ApplicationDescriptor,
     service: Option<Service>,
     characteristics: HashMap<Uuid, Characteristic>,
 }
 
 impl ApplicationClient {
-    pub async fn start(application_descriptor: ApplicationDescriptor) -> Result<()> {
-        let mut application_client = ApplicationClient::new(application_descriptor).await?;
+    pub async fn start(blt_application: Box<dyn BltApplication>) -> Result<()> {
+        let mut application_client = ApplicationClient::new(blt_application).await?;
 
         let adapter = application_client.adapter_manager.adapter();
         println!(
@@ -36,10 +33,11 @@ impl ApplicationClient {
         Ok(())
     }
 
-    pub async fn new(application_descriptor: ApplicationDescriptor) -> Result<Self> {
+    pub async fn new(blt_application: Box<dyn BltApplication>) -> Result<Self> {
         Ok(Self {
             adapter_manager: AdapterManager::new().await?,
-            application_descriptor,
+            application_descriptor: blt_application.application_descriptor(),
+            blt_application,
             service: None,
             characteristics: HashMap::new(),
         })
@@ -158,65 +156,11 @@ impl ApplicationClient {
 
     async fn exercise_characteristics(&self) -> Result<()> {
         if self.service.is_some() {
-            for uuid in self.characteristics.keys() {
-                let (mut write_io, notify_io) = self.characteristic_io(uuid).await?;
-
-                let data: Vec<u8> = "ping".as_bytes().to_vec();
-
-                write_io.write_all(&data).await.expect("Write failed.");
-                let (_notify_io, result) =
-                    ApplicationClient::read_from_characteristic(notify_io, data.len()).await;
-
-                let buffer = result.expect("Read failed.");
-                println!("Server says {:?}", String::from_utf8_lossy(&buffer));
-            }
+            self.blt_application
+                .exercise_characteristics(&self.characteristics)
+                .await?;
         }
 
         Ok(())
-    }
-
-    async fn characteristic_io(
-        &self,
-        uuid: &Uuid,
-    ) -> Result<(CharacteristicWriter, CharacteristicReader)> {
-        if let Some(characteristic) = self.characteristics.get(uuid) {
-            let write_io = characteristic.write_io().await?;
-            println!("Obtained write IO. MTU {} bytes.", write_io.mtu());
-
-            let mut notify_io = characteristic.notify_io().await?;
-            println!("Obtained notification IO. MTU {} bytes.", notify_io.mtu());
-
-            ApplicationClient::flush_notify_buffer(&mut notify_io).await?;
-            println!("Flushed notification IO.");
-
-            Ok((write_io, notify_io))
-        } else {
-            Err(anyhow::Error::msg(format!(
-                "Characteristic '{}' not found.",
-                uuid
-            )))
-        }
-    }
-
-    async fn flush_notify_buffer(notify_io: &mut CharacteristicReader) -> Result<()> {
-        let mut buf = [0; 1024];
-        while let Ok(Ok(_)) = timeout(Duration::from_secs(1), notify_io.read(&mut buf)).await {}
-        Ok(())
-    }
-
-    async fn read_from_characteristic(
-        mut characteristic_reader: CharacteristicReader,
-        len: usize,
-    ) -> (CharacteristicReader, Result<Vec<u8>, Error>) {
-        tokio::spawn(async move {
-            let mut buffer = vec![0u8; len];
-            let result = match characteristic_reader.read_exact(&mut buffer).await {
-                Ok(_) => Ok(buffer),
-                Err(error) => Err(error),
-            };
-            (characteristic_reader, result)
-        })
-        .await
-        .unwrap()
     }
 }

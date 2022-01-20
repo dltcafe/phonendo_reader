@@ -1,24 +1,25 @@
+use crate::ApplicationDescriptor;
 use bluer::{
     adv::AdvertisementHandle,
     gatt::local::{ApplicationHandle, CharacteristicControl},
 };
 
-pub struct ApplicationConfiguration {
-    service_name: &'static str,
+pub struct ApplicationHandler {
+    application_descriptor: ApplicationDescriptor,
     characteristics_controls: Vec<CharacteristicControl>,
     application_handle: ApplicationHandle,
     advertisement_handle: AdvertisementHandle,
 }
 
-impl ApplicationConfiguration {
+impl ApplicationHandler {
     pub fn new(
-        service_name: &'static str,
+        application_descriptor: ApplicationDescriptor,
         characteristics_controls: Vec<CharacteristicControl>,
         application_handle: ApplicationHandle,
         advertisement_handle: AdvertisementHandle,
     ) -> Self {
         Self {
-            service_name,
+            application_descriptor,
             characteristics_controls,
             application_handle,
             advertisement_handle,
@@ -26,7 +27,7 @@ impl ApplicationConfiguration {
     }
 
     pub fn service_name(&self) -> &'static str {
-        self.service_name
+        self.application_descriptor.service_name()
     }
 
     pub fn characteristics_controls(&self) -> &Vec<CharacteristicControl> {

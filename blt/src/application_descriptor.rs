@@ -28,7 +28,7 @@ impl ApplicationDescriptor {
         &self.service_uuid
     }
 
-    pub fn service_name(&self) -> &str {
+    pub fn service_name(&self) -> &'static str {
         self.service_name
     }
 
@@ -50,17 +50,15 @@ impl From<ApplicationDescriptor> for GattApplication {
         characteristics_controls_handles.reverse();
 
         GattApplication::new(
-            application_descriptor.service_uuid,
-            application_descriptor.service_name,
             Application {
                 services: vec![Service {
                     uuid: application_descriptor.service_uuid,
                     primary: true,
                     characteristics: application_descriptor
                         .characteristics_uuids
-                        .into_iter()
+                        .iter()
                         .map(|uuid| Characteristic {
-                            uuid,
+                            uuid: *uuid,
                             write: Some(CharacteristicWrite {
                                 write_without_response: true,
                                 method: CharacteristicWriteMethod::Io,
@@ -80,6 +78,7 @@ impl From<ApplicationDescriptor> for GattApplication {
                 ..Default::default()
             },
             characteristics_controls,
+            application_descriptor,
         )
     }
 }
