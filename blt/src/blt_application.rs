@@ -13,7 +13,7 @@ use uuid::Uuid;
 pub trait BltApplication {
     fn application_descriptor(&self) -> ApplicationDescriptor;
     fn gatt_application(&self) -> GattApplication;
-    async fn serve(&self, application_handler: &mut ApplicationHandler) -> Result<()>;
+    async fn serve(&self, application_handler: ApplicationHandler) -> Result<ApplicationHandler>;
     async fn exercise_characteristics(
         &self,
         characteristics: &HashMap<Uuid, Characteristic>,

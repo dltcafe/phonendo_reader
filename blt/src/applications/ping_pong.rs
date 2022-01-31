@@ -7,8 +7,9 @@ use bluer::gatt::remote::Characteristic;
 use bluer::gatt::{local::CharacteristicControlEvent, CharacteristicReader, CharacteristicWriter};
 use futures::{future, pin_mut, StreamExt};
 use std::collections::HashMap;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
-use uuid::Uuid;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use bluer::Uuid;
+use tokio::sync::mpsc;
 
 include!("../../../resources/services/ping_pong.inc");
 
@@ -30,13 +31,11 @@ impl BltApplication for PingPong {
         GattApplication::from(self.application_descriptor())
     }
 
-    async fn serve(&self, application_handler: &mut ApplicationHandler) -> Result<()> {
+    async fn serve(&self, mut application_handler: ApplicationHandler) -> Result<ApplicationHandler> {
         println!(
-            "GATT service '{}' ready. Press enter to quit.",
+            "GATT service '{}' ready. Press Ctrl+C to quit.",
             application_handler.service_name()
         );
-
-        let mut lines = BufReader::new(tokio::io::stdin()).lines();
 
         let mut read_buffer = Vec::new();
         let mut characteristic_reader: Option<CharacteristicReader> = None;
@@ -45,9 +44,21 @@ impl BltApplication for PingPong {
         let characteristic_control = application_handler.pop_characteristic_control().unwrap();
         pin_mut!(characteristic_control);
 
+        let (sender, mut receiver) = mpsc::channel(1);
+        ctrlc::set_handler(move || {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(async {
+                    println!(" Ctrl+C pressed.");
+                    sender.send(()).await.unwrap();
+                });
+        }).expect("Ctrl+C handler fails");
+
         'main_loop: loop {
             tokio::select! {
-                _ = lines.next_line() => break 'main_loop,
+                _ = receiver.recv() => break 'main_loop,
                 evt = characteristic_control.next() => {
                     match evt {
                         Some(CharacteristicControlEvent::Write(req)) => {
@@ -98,7 +109,7 @@ impl BltApplication for PingPong {
             }
         }
 
-        Ok(())
+        Ok(application_handler)
     }
 
     async fn exercise_characteristics(

@@ -33,8 +33,8 @@ impl ApplicationServer {
 
     pub async fn serve(&mut self) -> Result<()> {
         let gatt_application = self.blt_application.gatt_application();
-        let mut application_handler = gatt_application.init(&self.adapter_manager).await?;
-        self.blt_application.serve(&mut application_handler).await?;
+        let application_handler = gatt_application.init(&self.adapter_manager).await?;
+        let application_handler = self.blt_application.serve(application_handler).await?;
         ApplicationServer::teardown(application_handler).await;
         Ok(())
     }

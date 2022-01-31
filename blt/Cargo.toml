@@ -10,3 +10,4 @@ uuid = { version = "0.8.2", features = ["v4"] }
 tokio = { version = "1.15.0", features = ["rt-multi-thread", "macros", "io-util", "io-std"] }
 futures = "0.3"
 async-trait = "0.1.52"
+ctrlc = "3.2.1"
