@@ -86,8 +86,9 @@ impl BltApplication for PingPong {
                             let string = String::from_utf8_lossy(&value);
                             let output  = match string.as_ref() {
                                 "ping" => "pong",
-                                "exit" => "bye!",
-                                _ => "",
+                                "pong" => "ping",
+                                "exit" => "stopping server",
+                                _ => "unknown command",
                             }.as_bytes().to_vec();
 
                             if let Err(err) = characteristic_writer.as_mut().unwrap().write_all(&output).await {
@@ -117,17 +118,22 @@ impl BltApplication for PingPong {
         characteristics: &HashMap<Uuid, Characteristic>,
     ) -> Result<()> {
         for uuid in characteristics.keys() {
-            let (mut write_io, notify_io) =
+            let (mut write_io, mut notify_io) =
                 blt_application::characteristic_io(uuid, characteristics).await?;
 
-            let data: Vec<u8> = "ping".as_bytes().to_vec();
+            for message in ["ping", "pong", "random", "exit"] {
+                let data: Vec<u8> = message.as_bytes().to_vec();
 
-            write_io.write_all(&data).await.expect("Write failed.");
-            let (_notify_io, result) =
-                blt_application::read_from_characteristic(notify_io, data.len()).await;
+                println!("\n>> Command:  {:?}.", message);
+                write_io.write_all(&data).await.expect("Write failed.");
+                let (aux_notify_io, result) =
+                    blt_application::read_from_characteristic(notify_io).await;
 
-            let buffer = result.expect("Read failed.");
-            println!("Server says {:?}", String::from_utf8_lossy(&buffer));
+                notify_io = aux_notify_io;
+
+                let buffer = result.expect("Read failed.");
+                println!("<< Response: {:?}.", String::from_utf8_lossy(&buffer).trim());
+            }
         }
 
         Ok(())
