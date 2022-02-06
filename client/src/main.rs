@@ -1,19 +1,8 @@
 use anyhow::Result;
-use blt::{application_factory, ApplicationClient};
-
-use std::env;
+use blt::{application_factory, application_factory::ApplicationMode};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    if let Ok(app_name) = env::var("APP") {
-        if let Some(application) = application_factory::get_blt_application(&app_name) {
-            ApplicationClient::start(application).await?;
-        } else {
-            println!("Unknown application.");
-        }
-    } else {
-        println!("Environment var 'APP' is not defined.");
-    }
-
+    application_factory::launch_application(ApplicationMode::Client).await?;
     Ok(())
 }
