@@ -5,10 +5,10 @@ use anyhow::Result;
 use async_trait::async_trait;
 use bluer::gatt::remote::Characteristic;
 use bluer::gatt::{local::CharacteristicControlEvent, CharacteristicReader, CharacteristicWriter};
+use bluer::Uuid;
 use futures::{future, pin_mut, StreamExt};
 use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use bluer::Uuid;
 use tokio::sync::mpsc;
 
 include!("../../../resources/services/ping_pong.inc");
@@ -31,7 +31,10 @@ impl BltApplication for PingPong {
         GattApplication::from(self.application_descriptor())
     }
 
-    async fn serve(&self, mut application_handler: ApplicationHandler) -> Result<ApplicationHandler> {
+    async fn serve(
+        &self,
+        mut application_handler: ApplicationHandler,
+    ) -> Result<ApplicationHandler> {
         println!(
             "GATT service '{}' ready. Press Ctrl+C to quit.",
             application_handler.service_name()
@@ -54,7 +57,8 @@ impl BltApplication for PingPong {
                     println!(" Ctrl+C pressed.");
                     sender.send(()).await.unwrap();
                 });
-        }).expect("Ctrl+C handler fails");
+        })
+        .expect("Ctrl+C handler fails");
 
         'main_loop: loop {
             tokio::select! {
@@ -132,7 +136,10 @@ impl BltApplication for PingPong {
                 notify_io = aux_notify_io;
 
                 let buffer = result.expect("Read failed.");
-                println!("<< Response: {:?}.", String::from_utf8_lossy(&buffer).trim());
+                println!(
+                    "<< Response: {:?}.",
+                    String::from_utf8_lossy(&buffer).trim()
+                );
             }
         }
 

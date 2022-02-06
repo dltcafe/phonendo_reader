@@ -50,7 +50,7 @@ pub async fn flush_notify_buffer(notify_io: &mut CharacteristicReader) -> Result
 }
 
 pub async fn read_from_characteristic(
-    mut characteristic_reader: CharacteristicReader
+    mut characteristic_reader: CharacteristicReader,
 ) -> (CharacteristicReader, Result<Vec<u8>, Error>) {
     tokio::spawn(async move {
         let mut buffer = vec![0u8; 1024];

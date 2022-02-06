@@ -22,14 +22,14 @@ Library crate to manage Bluetooth operations.
 
 Binary crate that serves a Bluetooth GATT server.
 
-To run it: `cargo run -p server`.
+To run it: `APP=AplicationName cargo run -p server`.
 
-Note that this is a **WIP**, so right now is just says hi.
+Note that this is a **WIP**, so right now the only available apps are ['PingPong'].
 
 ### client
 
 Binary crate that connects to our Bluetooth GATT server.
 
-To run it: `cargo run -p client`.
+To run it: `APP=ApplicationName cargo run -p client`.
 
-Note that this is a **WIP**, so right now is just says hi.
+Note that this is a **WIP**, so right now the only available apps are ['PingPong'].
