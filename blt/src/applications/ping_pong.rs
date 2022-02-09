@@ -91,7 +91,7 @@ impl BltApplication for PingPong {
                             let output  = match string.as_ref() {
                                 "ping" => "pong",
                                 "pong" => "ping",
-                                "exit" => "stopping server",
+                                "exit" => "stopping emulator",
                                 _ => "unknown command",
                             }.as_bytes().to_vec();
 

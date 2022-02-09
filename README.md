@@ -18,18 +18,10 @@ To build the workspace (or in other words, each of the crates in it), just run `
 
 Library crate to manage Bluetooth operations.
 
-### server
+### emulator
 
-Binary crate that serves a Bluetooth GATT server.
+Binary crate that serves a Bluetooth GATT server or connects to a Bluetooth GATT server.
 
-To run it: `APP=AplicationName cargo run -p server`.
-
-Note that this is a **WIP**, so right now the only available apps are ['PingPong'].
-
-### client
-
-Binary crate that connects to our Bluetooth GATT server.
-
-To run it: `APP=ApplicationName cargo run -p client`.
+To run it: `APP=AplicationName APP_MODE=<server,client> cargo run -p emulator`.
 
 Note that this is a **WIP**, so right now the only available apps are ['PingPong'].
