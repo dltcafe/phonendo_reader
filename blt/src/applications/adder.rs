@@ -11,18 +11,18 @@ use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 
-include!("../../../resources/services/ping_pong.inc");
+include!("../../../resources/services/adder.inc");
 
-pub struct PingPong;
+pub struct Adder;
 
-impl Default for PingPong {
+impl Default for Adder {
     fn default() -> Self {
         Self
     }
 }
 
 #[async_trait]
-impl BltApplication for PingPong {
+impl BltApplication for Adder {
     fn application_descriptor(&self) -> ApplicationDescriptor {
         ApplicationDescriptor::new(SERVICE_UUID, SERVICE_NAME, vec![CHARACTERISTIC_UUID])
     }
@@ -60,6 +60,19 @@ impl BltApplication for PingPong {
         })
         .expect("Ctrl+C handler fails");
 
+        let sum = |str: &str| {
+            let mut result = 0;
+            for value in str.split(' ').collect::<Vec<&str>>() {
+                if let Ok(n) = value.parse::<i32>() {
+                    result += n;
+                } else {
+                    return format!("Invalid number '{}'", value);
+                }
+            }
+
+            result.to_string()
+        };
+
         'main_loop: loop {
             tokio::select! {
                 _ = receiver.recv() => break 'main_loop,
@@ -89,10 +102,8 @@ impl BltApplication for PingPong {
                             let value = read_buffer[..n].to_vec();
                             let string = String::from_utf8_lossy(&value);
                             let output  = match string.as_ref() {
-                                "ping" => "pong",
-                                "pong" => "ping",
-                                "exit" => "stopping emulator",
-                                _ => "unknown command",
+                                "exit" => "stopping emulator".to_string(),
+                                value => sum(value),
                             }.as_bytes().to_vec();
 
                             if let Err(err) = characteristic_writer.as_mut().unwrap().write_all(&output).await {
@@ -125,7 +136,7 @@ impl BltApplication for PingPong {
             let (mut write_io, mut notify_io) =
                 blt_application::characteristic_io(uuid, characteristics).await?;
 
-            for message in ["ping", "pong", "random", "exit"] {
+            for message in ["1", "2 3", "4 5 4", "1 a", "exit"] {
                 let data: Vec<u8> = message.as_bytes().to_vec();
 
                 println!("\n>> Command:  {:?}.", message);

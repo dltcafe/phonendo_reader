@@ -2,6 +2,5 @@
 
 members = [
     "blt",
-    "client",
-    "server",
+    "emulator",
 ]
