@@ -1,4 +1,6 @@
+use crate::adder::Adder;
 use crate::ping_pong::PingPong;
+
 use crate::{ApplicationClient, ApplicationServer, BltApplication};
 
 use anyhow::Result;
@@ -74,8 +76,10 @@ impl ApplicationFactory {
     }
 
     fn get_blt_application(name: &str) -> Option<Box<dyn BltApplication>> {
-        match name {
-            "PingPong" => Some(Box::new(PingPong::default())),
+        let value = name.to_lowercase();
+        match value.as_str() {
+            "ping_pong" => Some(Box::new(PingPong::default())),
+            "adder" => Some(Box::new(Adder::default())),
             _ => {
                 println!("Unknown application '{}'", name);
                 None
