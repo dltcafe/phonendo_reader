@@ -7,6 +7,7 @@ use bluer::gatt::remote::Characteristic;
 use bluer::gatt::{local::CharacteristicControlEvent, CharacteristicReader, CharacteristicWriter};
 use bluer::Uuid;
 use futures::{future, pin_mut, StreamExt};
+use rand::Rng;
 use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
@@ -136,11 +137,26 @@ impl BltApplication for Adder {
             let (mut write_io, mut notify_io) =
                 blt_application::characteristic_io(uuid, characteristics).await?;
 
-            for message in ["1", "2 3", "4 5 4", "1 a", "exit"] {
+            let mut entries: Vec<String> = Vec::new();
+            {
+                let mut rng = rand::thread_rng();
+                for _ in 0..rng.gen_range(1..10) { // entries
+                    entries.push(
+                        (0..rng.gen_range(1..5)) // values per entry
+                            .map(|_| rng.gen_range(0..11).to_string()) // value
+                            .collect::<Vec<String>>()
+                            .join(" "),
+                    );
+                }
+            }
+            entries.push("1 a".to_string()); // Invalid entry
+            entries.push("exit".to_string()); // Stop entry
+            for message in entries {
                 let data: Vec<u8> = message.as_bytes().to_vec();
 
                 println!("\n>> Command:  {:?}.", message);
                 write_io.write_all(&data).await.expect("Write failed.");
+
                 let (aux_notify_io, result) =
                     blt_application::read_from_characteristic(notify_io).await;
 
