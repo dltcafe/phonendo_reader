@@ -3,6 +3,7 @@ use crate::ping_pong::PingPong;
 
 use crate::{ApplicationClient, ApplicationServer, BltApplication};
 
+use crate::cts::CTS;
 use anyhow::Result;
 use std::env;
 use std::str::FromStr;
@@ -80,6 +81,7 @@ impl ApplicationFactory {
         match value.as_str() {
             "ping_pong" => Some(Box::new(PingPong::default())),
             "adder" => Some(Box::new(Adder::default())),
+            "cts" => Some(Box::new(CTS::default())),
             _ => {
                 println!("Unknown application '{}'", name);
                 None

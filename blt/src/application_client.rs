@@ -51,7 +51,14 @@ impl ApplicationClient {
             match event {
                 AdapterEvent::DeviceAdded(address) => {
                     let device = adapter.device(address)?;
+
                     println!("\nDiscovered device {}.", device.address());
+                    if !device.is_paired().await? {
+                        println!("\tTrying to pair with it.");
+                        device.pair().await?;
+                        println!("\tPaired.");
+                    }
+
                     match self.find_application_service(&device).await {
                         Ok(Some(service)) => match self.find_characteristics(&service).await {
                             Ok(Some(characteristics)) => {

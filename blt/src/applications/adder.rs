@@ -140,7 +140,8 @@ impl BltApplication for Adder {
             let mut entries: Vec<String> = Vec::new();
             {
                 let mut rng = rand::thread_rng();
-                for _ in 0..rng.gen_range(1..10) { // entries
+                for _ in 0..rng.gen_range(1..10) {
+                    // entries
                     entries.push(
                         (0..rng.gen_range(1..5)) // values per entry
                             .map(|_| rng.gen_range(0..11).to_string()) // value
