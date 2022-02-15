@@ -1,0 +1,1 @@
+const DEVICES_TO_BE_PAIRED: [&str; 1] = ["InfiniTime"];
