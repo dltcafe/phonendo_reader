@@ -45,7 +45,7 @@ impl ApplicationDescriptor {
         &self.characteristics_uuids
     }
 
-    pub fn default_reade() -> Option<CharacteristicRead> {
+    pub fn default_read() -> Option<CharacteristicRead> {
         None
     }
 

@@ -66,12 +66,20 @@ pub async fn read_from_characteristic(
     .unwrap()
 }
 
-pub fn control_c_handler(application_handler: &ApplicationHandler) -> Receiver<()> {
+pub fn server_control_c_handler(application_handler: &ApplicationHandler) -> Receiver<()> {
     println!(
         "GATT service '{}' ready. Press Ctrl+C to quit.",
         application_handler.service_name()
     );
+    control_c_handler()
+}
 
+pub fn client_control_c_handler() -> Receiver<()> {
+    println!("GATT service listening. Press Ctrl+C to quit.");
+    control_c_handler()
+}
+
+fn control_c_handler() -> Receiver<()> {
     let (sender, receiver) = mpsc::channel(1);
     ctrlc::set_handler(move || {
         tokio::runtime::Builder::new_multi_thread()

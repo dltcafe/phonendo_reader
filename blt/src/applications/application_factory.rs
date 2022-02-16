@@ -1,9 +1,10 @@
 use crate::adder::Adder;
+use crate::cts::CTS;
+use crate::heart_rate::HeartRate;
 use crate::ping_pong::PingPong;
 
 use crate::{ApplicationClient, ApplicationServer, BltApplication};
 
-use crate::cts::CTS;
 use anyhow::Result;
 use std::env;
 use std::str::FromStr;
@@ -82,6 +83,7 @@ impl ApplicationFactory {
             "ping_pong" => Some(Box::new(PingPong::default())),
             "adder" => Some(Box::new(Adder::default())),
             "cts" => Some(Box::new(CTS::default())),
+            "heart_rate" => Some(Box::new(HeartRate::default())),
             _ => {
                 println!("Unknown application '{}'", name);
                 None

@@ -58,7 +58,7 @@ impl BltApplication for CTS {
     }
 
     async fn serve(&self, application_handler: ApplicationHandler) -> Result<ApplicationHandler> {
-        let mut receiver = blt_application::control_c_handler(&application_handler);
+        let mut receiver = blt_application::server_control_c_handler(&application_handler);
         'main_loop: loop {
             tokio::select! {
                 _ = receiver.recv() => break 'main_loop,

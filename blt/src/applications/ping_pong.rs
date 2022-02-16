@@ -45,7 +45,7 @@ impl BltApplication for PingPong {
         let characteristic_control = application_handler.pop_characteristic_control().unwrap();
         pin_mut!(characteristic_control);
 
-        let mut receiver = blt_application::control_c_handler(&application_handler);
+        let mut receiver = blt_application::server_control_c_handler(&application_handler);
 
         'main_loop: loop {
             tokio::select! {
