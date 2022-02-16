@@ -9,7 +9,6 @@ use bluer::Uuid;
 use futures::{future, pin_mut, StreamExt};
 use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::mpsc;
 
 include!("../../../resources/services/ping_pong.inc");
 
@@ -24,7 +23,11 @@ impl Default for PingPong {
 #[async_trait]
 impl BltApplication for PingPong {
     fn application_descriptor(&self) -> ApplicationDescriptor {
-        ApplicationDescriptor::new(SERVICE_UUID, SERVICE_NAME, vec![CHARACTERISTIC_UUID])
+        ApplicationDescriptor::default_descriptor(
+            SERVICE_UUID,
+            SERVICE_NAME,
+            vec![CHARACTERISTIC_UUID],
+        )
     }
 
     fn gatt_application(&self) -> GattApplication {
@@ -35,11 +38,6 @@ impl BltApplication for PingPong {
         &self,
         mut application_handler: ApplicationHandler,
     ) -> Result<ApplicationHandler> {
-        println!(
-            "GATT service '{}' ready. Press Ctrl+C to quit.",
-            application_handler.service_name()
-        );
-
         let mut read_buffer = Vec::new();
         let mut characteristic_reader: Option<CharacteristicReader> = None;
         let mut characteristic_writer: Option<CharacteristicWriter> = None;
@@ -47,18 +45,7 @@ impl BltApplication for PingPong {
         let characteristic_control = application_handler.pop_characteristic_control().unwrap();
         pin_mut!(characteristic_control);
 
-        let (sender, mut receiver) = mpsc::channel(1);
-        ctrlc::set_handler(move || {
-            tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(async {
-                    println!(" Ctrl+C pressed.");
-                    sender.send(()).await.unwrap();
-                });
-        })
-        .expect("Ctrl+C handler fails");
+        let mut receiver = blt_application::control_c_handler(&application_handler);
 
         'main_loop: loop {
             tokio::select! {

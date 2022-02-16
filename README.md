@@ -24,4 +24,4 @@ Binary crate that serves a Bluetooth GATT server or connects to a Bluetooth GATT
 
 To run it: `APP=AplicationName APP_MODE=<server,client> cargo run -p emulator`.
 
-Note that this is a **WIP**, so right now the only available apps are ['Ping_Pong', 'Adder'].
+Note that this is a **WIP**, so right now the only available apps are ['ping_pong', 'adder', 'cts'].

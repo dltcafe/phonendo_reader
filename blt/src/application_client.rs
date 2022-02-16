@@ -55,10 +55,18 @@ impl ApplicationClient {
                     let device = adapter.device(address)?;
 
                     println!(
-                        "\nDiscovered device {}. [Name: {}. Alias: {}]",
+                        "\nDiscovered device {}. [Name: '{}'. Alias: '{}']",
                         device.address(),
-                        device.name().await?.unwrap(),
-                        device.alias().await.unwrap()
+                        if let Some(value) = device.name().await? {
+                            value
+                        } else {
+                            String::from("")
+                        },
+                        if let Ok(value) = device.alias().await {
+                            value
+                        } else {
+                            String::from("")
+                        },
                     );
 
                     match self.find_application_service(&device).await {

@@ -1,10 +1,16 @@
-use crate::{ApplicationDescriptor, ApplicationHandler, BltApplication, GattApplication};
+use crate::{
+    blt_application, ApplicationDescriptor, ApplicationHandler, BltApplication, GattApplication,
+};
 use anyhow::Result;
 use async_trait::async_trait;
+use bluer::gatt::local::{CharacteristicRead, CharacteristicWrite};
 use bluer::gatt::remote::Characteristic;
 use bluer::Uuid;
 use chrono::{DateTime, Datelike, NaiveDateTime, ParseResult, Timelike};
+use futures::FutureExt;
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 include!("../../../resources/services/cts.inc");
 
@@ -25,6 +31,25 @@ impl BltApplication for CTS {
             uuid::Uuid::try_from(SERVICE).unwrap(),
             SERVICE_NAME,
             vec![uuid::Uuid::try_from(CURRENT_TIME_CHARACTERISTIC).unwrap()],
+            vec![Some(CharacteristicRead {
+                read: true,
+                fun: Box::new(|_| {
+                    let current_local_time = chrono::Utc::now();
+                    let current_local_time = date_time_to_vector(&current_local_time);
+                    let value = Arc::new(Mutex::new(current_local_time));
+                    async move {
+                        let value = value.lock().await.clone();
+                        Ok(value)
+                    }
+                    .boxed()
+                }),
+                ..Default::default()
+            })],
+            vec![Some(CharacteristicWrite {
+                write: false,
+                ..Default::default()
+            })],
+            vec![ApplicationDescriptor::default_notify()],
         )
     }
 
@@ -32,11 +57,15 @@ impl BltApplication for CTS {
         GattApplication::from(self.application_descriptor())
     }
 
-    async fn serve(
-        &self,
-        mut _application_handler: ApplicationHandler,
-    ) -> Result<ApplicationHandler> {
-        todo!("serve")
+    async fn serve(&self, application_handler: ApplicationHandler) -> Result<ApplicationHandler> {
+        let mut receiver = blt_application::control_c_handler(&application_handler);
+        'main_loop: loop {
+            tokio::select! {
+                _ = receiver.recv() => break 'main_loop,
+            }
+        }
+
+        Ok(application_handler)
     }
 
     async fn exercise_characteristics(

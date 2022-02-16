@@ -6,6 +6,8 @@ use bluer::gatt::{
     {CharacteristicReader, CharacteristicWriter},
 };
 use std::{collections::HashMap, io::Error, time::Duration};
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::Receiver;
 use tokio::{io::AsyncReadExt, time::timeout};
 use uuid::Uuid;
 
@@ -62,4 +64,26 @@ pub async fn read_from_characteristic(
     })
     .await
     .unwrap()
+}
+
+pub fn control_c_handler(application_handler: &ApplicationHandler) -> Receiver<()> {
+    println!(
+        "GATT service '{}' ready. Press Ctrl+C to quit.",
+        application_handler.service_name()
+    );
+
+    let (sender, receiver) = mpsc::channel(1);
+    ctrlc::set_handler(move || {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                println!(" Ctrl+C pressed.");
+                sender.send(()).await.unwrap();
+            });
+    })
+    .expect("Ctrl+C handler fails");
+
+    receiver
 }
