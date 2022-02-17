@@ -23,6 +23,7 @@ impl AdapterManager {
         let adapter_name = adapter_names.first().expect("No Bluetooth adapter present");
         let adapter = session.adapter(adapter_name)?;
         adapter.set_powered(true).await?;
+        adapter.set_pairable_timeout(15).await?;
 
         Ok(adapter)
     }

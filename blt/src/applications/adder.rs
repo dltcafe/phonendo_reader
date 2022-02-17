@@ -10,7 +10,6 @@ use futures::{future, pin_mut, StreamExt};
 use rand::Rng;
 use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::mpsc;
 
 include!("../../../resources/services/adder.inc");
 
@@ -25,7 +24,11 @@ impl Default for Adder {
 #[async_trait]
 impl BltApplication for Adder {
     fn application_descriptor(&self) -> ApplicationDescriptor {
-        ApplicationDescriptor::new(SERVICE_UUID, SERVICE_NAME, vec![CHARACTERISTIC_UUID])
+        ApplicationDescriptor::default_descriptor(
+            SERVICE_UUID,
+            SERVICE_NAME,
+            vec![CHARACTERISTIC_UUID],
+        )
     }
 
     fn gatt_application(&self) -> GattApplication {
@@ -36,11 +39,6 @@ impl BltApplication for Adder {
         &self,
         mut application_handler: ApplicationHandler,
     ) -> Result<ApplicationHandler> {
-        println!(
-            "GATT service '{}' ready. Press Ctrl+C to quit.",
-            application_handler.service_name()
-        );
-
         let mut read_buffer = Vec::new();
         let mut characteristic_reader: Option<CharacteristicReader> = None;
         let mut characteristic_writer: Option<CharacteristicWriter> = None;
@@ -48,31 +46,7 @@ impl BltApplication for Adder {
         let characteristic_control = application_handler.pop_characteristic_control().unwrap();
         pin_mut!(characteristic_control);
 
-        let (sender, mut receiver) = mpsc::channel(1);
-        ctrlc::set_handler(move || {
-            tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(async {
-                    println!(" Ctrl+C pressed.");
-                    sender.send(()).await.unwrap();
-                });
-        })
-        .expect("Ctrl+C handler fails");
-
-        let sum = |str: &str| {
-            let mut result = 0;
-            for value in str.split(' ').collect::<Vec<&str>>() {
-                if let Ok(n) = value.parse::<i32>() {
-                    result += n;
-                } else {
-                    return format!("Invalid number '{}'", value);
-                }
-            }
-
-            result.to_string()
-        };
+        let mut receiver = blt_application::server_control_c_handler(&application_handler);
 
         'main_loop: loop {
             tokio::select! {
@@ -137,21 +111,7 @@ impl BltApplication for Adder {
             let (mut write_io, mut notify_io) =
                 blt_application::characteristic_io(uuid, characteristics).await?;
 
-            let mut entries: Vec<String> = Vec::new();
-            {
-                let mut rng = rand::thread_rng();
-                for _ in 0..rng.gen_range(1..10) { // entries
-                    entries.push(
-                        (0..rng.gen_range(1..5)) // values per entry
-                            .map(|_| rng.gen_range(0..11).to_string()) // value
-                            .collect::<Vec<String>>()
-                            .join(" "),
-                    );
-                }
-            }
-            entries.push("1 a".to_string()); // Invalid entry
-            entries.push("exit".to_string()); // Stop entry
-            for message in entries {
+            for message in generate_random_entries() {
                 let data: Vec<u8> = message.as_bytes().to_vec();
 
                 println!("\n>> Command:  {:?}.", message);
@@ -172,4 +132,36 @@ impl BltApplication for Adder {
 
         Ok(())
     }
+}
+
+fn sum(str: &str) -> String {
+    let mut result = 0;
+
+    for value in str.split(' ').collect::<Vec<&str>>() {
+        if let Ok(n) = value.parse::<i32>() {
+            result += n;
+        } else {
+            return format!("Invalid number '{}'", value);
+        }
+    }
+
+    result.to_string()
+}
+
+fn generate_random_entries() -> Vec<String> {
+    let mut entries: Vec<String> = Vec::new();
+    let mut rng = rand::thread_rng();
+    for _ in 0..rng.gen_range(1..10) {
+        // entries
+        entries.push(
+            (0..rng.gen_range(1..5)) // values per entry
+                .map(|_| rng.gen_range(0..11).to_string()) // value
+                .collect::<Vec<String>>()
+                .join(" "),
+        );
+    }
+    entries.push("1 a".to_string()); // Invalid entry
+    entries.push("exit".to_string()); // Stop entry
+
+    entries
 }
