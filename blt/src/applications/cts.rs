@@ -28,7 +28,6 @@ impl Default for CTS {
 impl BltApplication for CTS {
     fn application_descriptor(&self) -> ApplicationDescriptor {
         ApplicationDescriptor::new(
-            None,
             uuid::Uuid::try_from(SERVICE).unwrap(),
             SERVICE_NAME,
             vec![uuid::Uuid::try_from(CURRENT_TIME_CHARACTERISTIC).unwrap()],

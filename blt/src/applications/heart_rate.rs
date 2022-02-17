@@ -11,7 +11,8 @@ use bluer::Uuid;
 use futures::{pin_mut, FutureExt, StreamExt};
 use rand::Rng;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::mem::MaybeUninit;
+use std::sync::Once;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
@@ -24,6 +25,26 @@ const NOTIFICATION_INTERVAL: u64 = 7;
 const MAX_HEART_RATE: u16 = 250;
 const MIN_HEART_RATE: u16 = 60;
 
+#[derive(Default)]
+struct ApplicationState {
+    pub state: Mutex<Vec<u8>>,
+}
+
+fn application_state() -> &'static ApplicationState {
+    static mut APPLICATION_STATE: MaybeUninit<ApplicationState> = MaybeUninit::uninit();
+    static ONCE: Once = Once::new();
+
+    unsafe {
+        ONCE.call_once(|| {
+            let application_state = ApplicationState {
+                state: Mutex::new(Vec::new()),
+            };
+            APPLICATION_STATE.write(application_state);
+        });
+        APPLICATION_STATE.assume_init_ref()
+    }
+}
+
 pub struct HeartRate;
 
 impl Default for HeartRate {
@@ -35,18 +56,14 @@ impl Default for HeartRate {
 #[async_trait]
 impl BltApplication for HeartRate {
     fn application_descriptor(&self) -> ApplicationDescriptor {
-        let state = Arc::new(Mutex::new(heart_rate_to_vector(
-            &INITIAL_HEART_RATE_MEASURE,
-        )));
         ApplicationDescriptor::new(
-            Some(state),
             uuid::Uuid::try_from(SERVICE).unwrap(),
             SERVICE_NAME,
             vec![uuid::Uuid::try_from(HEART_RATE_MEASUREMENT_CHARACTERISTIC).unwrap()],
             vec![Some(CharacteristicRead {
                 read: true,
                 fun: Box::new(|_| {
-                    async { Ok(heart_rate_to_vector(&INITIAL_HEART_RATE_MEASURE)) }.boxed()
+                    async move { Ok(application_state().state.lock().await.clone()) }.boxed()
                 }),
                 ..Default::default()
             })],
@@ -72,10 +89,12 @@ impl BltApplication for HeartRate {
         let characteristic_control = application_handler.pop_characteristic_control().unwrap();
         let mut interval = interval(Duration::from_secs(NOTIFICATION_INTERVAL));
 
-        let mut value = application_handler.state().await;
-        let mut heart_rate = vector_to_heart_rate(&value);
-
         pin_mut!(characteristic_control);
+
+        {
+            let mut state = application_state().state.lock().await;
+            *state = heart_rate_to_vector(&INITIAL_HEART_RATE_MEASURE);
+        }
 
         'main_loop: loop {
             tokio::select! {
@@ -89,12 +108,12 @@ impl BltApplication for HeartRate {
                     }
                 },
                 _ = interval.tick() => {
-                    heart_rate = generate_random_heart_rate_measure(&heart_rate);
-                    value = heart_rate_to_vector(&heart_rate);
-                    application_handler.update_state(&value).await;
+                    let mut state = application_state().state.lock().await;
+                    let heart_rate = generate_random_heart_rate_measure(&vector_to_heart_rate(&state));
+                    *state = heart_rate_to_vector(&heart_rate);
                     println!("Generated new random value: {:#3}.", heart_rate);
                     if let Some(writer) = characteristic_writer.as_mut() {
-                        if let Err(err) = writer.write(&value).await {
+                        if let Err(err) = writer.write(&state).await {
                             println!("Notification stream error: {}.", &err);
                             characteristic_writer = None;
                         }

@@ -25,7 +25,6 @@ impl Default for Adder {
 impl BltApplication for Adder {
     fn application_descriptor(&self) -> ApplicationDescriptor {
         ApplicationDescriptor::default_descriptor(
-            None,
             SERVICE_UUID,
             SERVICE_NAME,
             vec![CHARACTERISTIC_UUID],
