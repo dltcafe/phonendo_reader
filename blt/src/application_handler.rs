@@ -30,6 +30,14 @@ impl ApplicationHandler {
         self.application_descriptor.service_name()
     }
 
+    pub async fn state(&self) -> Vec<u8> {
+        self.application_descriptor.state().await
+    }
+
+    pub async fn update_state(&mut self, value: &[u8]) {
+        self.application_descriptor.update_state(value).await;
+    }
+
     pub fn characteristics_controls(&self) -> &Vec<CharacteristicControl> {
         &self.characteristics_controls
     }

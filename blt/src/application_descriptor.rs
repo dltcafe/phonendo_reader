@@ -4,8 +4,11 @@ use bluer::gatt::local::{
     CharacteristicRead, CharacteristicWrite, CharacteristicWriteMethod, Service,
 };
 use bluer::Uuid;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 pub struct ApplicationDescriptor {
+    state: Option<Arc<Mutex<Vec<u8>>>>,
     service_uuid: Uuid,
     service_name: &'static str,
     characteristics_uuids: Vec<Uuid>,
@@ -16,6 +19,7 @@ pub struct ApplicationDescriptor {
 
 impl ApplicationDescriptor {
     pub fn new(
+        state: Option<Arc<Mutex<Vec<u8>>>>,
         service_uuid: Uuid,
         service_name: &'static str,
         characteristics_uuids: Vec<Uuid>,
@@ -24,12 +28,30 @@ impl ApplicationDescriptor {
         notify_functions: Vec<Option<CharacteristicNotify>>,
     ) -> Self {
         Self {
+            state,
             service_uuid,
             service_name,
             characteristics_uuids,
             read_functions,
             write_functions,
             notify_functions,
+        }
+    }
+
+    pub async fn state(&self) -> Vec<u8> {
+        if let Some(state) = &self.state {
+            let state = state.lock().await;
+            state.to_vec()
+        } else {
+            vec![]
+        }
+    }
+
+    pub async fn update_state(&mut self, value: &[u8]) {
+        if let Some(state) = &self.state {
+            for (counter, v) in (*state.lock().await).iter_mut().enumerate() {
+                *v = value[counter];
+            }
         }
     }
 
@@ -66,6 +88,7 @@ impl ApplicationDescriptor {
     }
 
     pub fn default_descriptor(
+        state: Option<Arc<Mutex<Vec<u8>>>>,
         service_uuid: Uuid,
         service_name: &'static str,
         characteristics_uuids: Vec<Uuid>,
@@ -81,6 +104,7 @@ impl ApplicationDescriptor {
         }
 
         ApplicationDescriptor::new(
+            state,
             service_uuid,
             service_name,
             characteristics_uuids,

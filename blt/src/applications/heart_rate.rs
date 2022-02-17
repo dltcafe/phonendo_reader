@@ -35,19 +35,18 @@ impl Default for HeartRate {
 #[async_trait]
 impl BltApplication for HeartRate {
     fn application_descriptor(&self) -> ApplicationDescriptor {
+        let state = Arc::new(Mutex::new(heart_rate_to_vector(
+            &INITIAL_HEART_RATE_MEASURE,
+        )));
         ApplicationDescriptor::new(
+            Some(state),
             uuid::Uuid::try_from(SERVICE).unwrap(),
             SERVICE_NAME,
             vec![uuid::Uuid::try_from(HEART_RATE_MEASUREMENT_CHARACTERISTIC).unwrap()],
             vec![Some(CharacteristicRead {
                 read: true,
                 fun: Box::new(|_| {
-                    let value = Arc::new(Mutex::new(vec![0x0, 0x0]));
-                    async move {
-                        let value = value.lock().await.clone();
-                        Ok(value)
-                    }
-                    .boxed()
+                    async { Ok(heart_rate_to_vector(&INITIAL_HEART_RATE_MEASURE)) }.boxed()
                 }),
                 ..Default::default()
             })],
@@ -73,8 +72,8 @@ impl BltApplication for HeartRate {
         let characteristic_control = application_handler.pop_characteristic_control().unwrap();
         let mut interval = interval(Duration::from_secs(NOTIFICATION_INTERVAL));
 
-        let mut heart_rate = INITIAL_HEART_RATE_MEASURE;
-        let mut value;
+        let mut value = application_handler.state().await;
+        let mut heart_rate = vector_to_heart_rate(&value);
 
         pin_mut!(characteristic_control);
 
@@ -92,6 +91,7 @@ impl BltApplication for HeartRate {
                 _ = interval.tick() => {
                     heart_rate = generate_random_heart_rate_measure(&heart_rate);
                     value = heart_rate_to_vector(&heart_rate);
+                    application_handler.update_state(&value).await;
                     println!("Generated new random value: {:#3}.", heart_rate);
                     if let Some(writer) = characteristic_writer.as_mut() {
                         if let Err(err) = writer.write(&value).await {

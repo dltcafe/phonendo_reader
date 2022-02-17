@@ -24,6 +24,7 @@ impl Default for PingPong {
 impl BltApplication for PingPong {
     fn application_descriptor(&self) -> ApplicationDescriptor {
         ApplicationDescriptor::default_descriptor(
+            None,
             SERVICE_UUID,
             SERVICE_NAME,
             vec![CHARACTERISTIC_UUID],
