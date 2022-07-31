@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "blt",
+    "reader",
+]
