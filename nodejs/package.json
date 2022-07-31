@@ -1,0 +1,24 @@
+{
+  "name": "phonendo_reader",
+  "version": "1.0.0",
+  "description": "Phonendo Reader",
+  "type": "module",
+  "main": "reader.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node reader.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@chainsafe/libp2p-noise": "^6.2.0",
+    "@libp2p/mdns": "^1.0.7",
+    "@libp2p/mplex": "^1.1.0",
+    "@libp2p/tcp": "^1.0.11",
+    "dotenv": "^16.0.1",
+    "it-map": "^1.0.6",
+    "it-pipe": "^2.0.3",
+    "libp2p": "^0.37.1",
+    "uuid4": "^2.0.2"
+  }
+}

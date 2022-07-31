@@ -2,5 +2,5 @@
 
 members = [
     "blt",
-    "emulator",
+    "reader",
 ]

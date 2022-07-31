@@ -77,7 +77,7 @@ impl BltApplication for Adder {
                             let value = read_buffer[..n].to_vec();
                             let string = String::from_utf8_lossy(&value);
                             let output  = match string.as_ref() {
-                                "exit" => "stopping emulator".to_string(),
+                                "exit" => "stopping reader".to_string(),
                                 value => sum(value),
                             }.as_bytes().to_vec();
 
